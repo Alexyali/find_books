@@ -291,7 +291,8 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
 
     # 启动 Flask 开发服务器
+    # host='0.0.0.0' 允许局域网内的其他设备访问
     # debug 模式根据 FLASK_ENV 环境变量决定
     # - development: 启用调试模式，支持热重载和详细错误信息
     # - production: 禁用调试模式，提高安全性和性能
-    app.run(debug=os.getenv('FLASK_ENV') == 'development', port=port)
+    app.run(host='0.0.0.0', debug=os.getenv('FLASK_ENV') == 'development', port=port)
