@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能书籍推荐系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 智能书籍推荐</h1>
+            <p class="subtitle">告诉我你的心情，让我为你推荐适合的书籍</p>
+        </header>
+
+        <main>
+            <!-- 心情输入区 -->
+            <section class="input-section">
+                <form id="moodForm">
+                    <div class="form-group">
+                        <label for="moodInput">你现在的心情是？</label>
+                        <textarea
+                            id="moodInput"
+                            name="mood"
+                            placeholder="例如：今天感觉有点焦虑，想找些能让我平静下来的书..."
+                            rows="4"
+                            maxlength="500"
+                        ></textarea>
+                    </div>
+
+                    <!-- 预设心情选项 -->
+                    <div class="preset-moods">
+                        <p class="preset-label">或选择预设心情：</p>
+                        <div class="mood-buttons">
+                            <button type="button" class="mood-btn" data-mood="开心快乐">😊 开心</button>
+                            <button type="button" class="mood-btn" data-mood="有点悲伤">😢 悲伤</button>
+                            <button type="button" class="mood-btn" data-mood="焦虑不安">😰 焦虑</button>
+                            <button type="button" class="mood-btn" data-mood="平静放松">😌 平静</button>
+                            <button type="button" class="mood-btn" data-mood="充满动力">💪 有动力</button>
+                            <button type="button" class="mood-btn" data-mood="感到孤独">😔 孤独</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        获取推荐
+                    </button>
+                </form>
+            </section>
+
+            <!-- 加载状态指示器 -->
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>正在为你寻找合适的书籍...</p>
+            </div>
+
+            <!-- 错误提示区域 -->
+            <div class="error-message" id="errorMessage" style="display: none;">
+                <span class="error-icon">⚠️</span>
+                <p id="errorText"></p>
+                <button class="retry-btn" id="retryBtn">重试</button>
+            </div>
+
+            <!-- 推荐结果展示区域 -->
+            <section class="recommendations" id="recommendations" style="display: none;">
+                <h2>为你推荐的书籍</h2>
+                <div class="book-list" id="bookList">
+                    <!-- 推荐卡片将通过 JavaScript 动态插入 -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>基于 OpenAI 技术的智能推荐系统</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
