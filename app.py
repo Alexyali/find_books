@@ -27,12 +27,15 @@ load_dotenv()
 app = Flask(__name__)
 
 # 配置应用
-# 从环境变量中获取 OpenAI API 密钥
-app.config['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
+# 从环境变量中获取 API 密钥
+app.config['ARK_API_KEY'] = os.getenv('ARK_API_KEY')
 
-# 初始化 OpenAI 客户端
-# 用于后续调用 OpenAI API 服务
-client = OpenAI(api_key=app.config['OPENAI_API_KEY'])
+# 初始化 OpenAI 客户端（使用火山引擎 ARK API）
+# 用于后续调用 API 服务
+client = OpenAI(
+    api_key=os.environ.get("ARK_API_KEY"),
+    base_url="https://ark.cn-beijing.volces.com/api/v3",
+)
 
 
 def build_prompt(mood):
@@ -155,7 +158,7 @@ def get_book_recommendations(mood):
         # 调用 OpenAI API，设置 30 秒超时
         # 使用 chat completions API 进行对话式交互
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # 使用 GPT-3.5 Turbo 模型，性价比高
+            model="doubao-seed-1-6-251015",  # 使用 GPT-3.5 Turbo 模型，性价比高
             messages=[
                 # system 消息：定义 AI 助手的角色和行为
                 {"role": "system", "content": "你是一位专业的图书推荐专家，擅长根据用户心情推荐合适的书籍。"},
