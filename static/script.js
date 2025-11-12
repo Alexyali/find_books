@@ -26,10 +26,45 @@ const retryBtn = document.getElementById('retryBtn');           // 重试按钮
 const recommendations = document.getElementById('recommendations'); // 推荐结果容器
 const bookList = document.getElementById('bookList');           // 书籍列表容器
 const moodButtons = document.querySelectorAll('.mood-btn');     // 预设心情按钮
+const categoryToggle = document.getElementById('categoryToggle'); // 类别选择器切换按钮
+const categoryOptions = document.getElementById('categoryOptions'); // 类别选项容器
+const categoryGrid = document.getElementById('categoryGrid');     // 类别网格容器
+const categoryFilter = document.getElementById('categoryFilter'); // 类别筛选器容器
+const filterTags = document.getElementById('filterTags');         // 筛选标签容器
+
+// 全局变量
+let allCategories = [];           // 存储所有类别数据
+let currentRecommendations = [];  // 存储当前推荐结果
+let selectedFilter = 'all';       // 当前选中的筛选类别
+
+// ============================================
+// 页面初始化
+// ============================================
+
+/**
+ * 页面加载完成后执行初始化
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    loadCategories();
+});
 
 // ============================================
 // 事件监听器设置
 // ============================================
+
+/**
+ * 类别选择器切换事件
+ *
+ * 点击切换按钮展开或折叠类别选项
+ */
+categoryToggle.addEventListener('click', () => {
+    const isVisible = categoryOptions.style.display !== 'none';
+    categoryOptions.style.display = isVisible ? 'none' : 'block';
+
+    // 更新切换图标
+    const icon = categoryToggle.querySelector('.toggle-icon');
+    icon.textContent = isVisible ? '▼' : '▲';
+});
 
 /**
  * 预设心情按钮点击事件
@@ -92,18 +127,78 @@ retryBtn.addEventListener('click', () => {
 // ============================================
 
 /**
+ * 加载书籍类别数据
+ *
+ * 从后端 API 获取所有可用的书籍类别
+ * 并动态渲染类别选择器
+ */
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+
+        if (response.ok && data.categories) {
+            allCategories = data.categories;
+            renderCategorySelector();
+        }
+    } catch (error) {
+        console.error('加载类别失败:', error);
+        // 类别加载失败不影响核心功能，静默处理
+    }
+}
+
+/**
+ * 渲染类别选择器
+ *
+ * 根据类别数据动态创建复选框
+ */
+function renderCategorySelector() {
+    categoryGrid.innerHTML = '';
+
+    allCategories.forEach(category => {
+        const categoryItem = document.createElement('div');
+        categoryItem.className = 'category-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `cat-${category.id}`;
+        checkbox.value = category.id;
+        checkbox.className = 'category-checkbox';
+
+        const label = document.createElement('label');
+        label.htmlFor = `cat-${category.id}`;
+        label.textContent = category.name;
+
+        categoryItem.appendChild(checkbox);
+        categoryItem.appendChild(label);
+        categoryGrid.appendChild(categoryItem);
+    });
+}
+
+/**
+ * 获取用户选择的类别
+ *
+ * @returns {Array} 选中的类别 ID 数组
+ */
+function getSelectedCategories() {
+    const checkboxes = document.querySelectorAll('.category-checkbox:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+/**
  * 获取书籍推荐
  *
- * 向后端 API 发送心情数据，获取书籍推荐结果
+ * 向后端 API 发送心情数据和可选的类别偏好，获取书籍推荐结果
  * 这是应用的核心功能函数
  *
  * @param {string} mood - 用户输入的心情描述
  *
  * 流程：
  * 1. 显示加载状态
- * 2. 发送 POST 请求到 /api/recommend
- * 3. 处理响应数据
- * 4. 显示推荐结果或错误信息
+ * 2. 收集用户选择的类别
+ * 3. 发送 POST 请求到 /api/recommend
+ * 4. 处理响应数据
+ * 5. 显示推荐结果或错误信息
  */
 async function getRecommendations(mood) {
     // 显示加载状态，隐藏之前的结果和错误
@@ -112,6 +207,15 @@ async function getRecommendations(mood) {
     hideRecommendations();
 
     try {
+        // 收集用户选择的类别
+        const selectedCategories = getSelectedCategories();
+
+        // 构建请求体
+        const requestBody = { mood: mood };
+        if (selectedCategories.length > 0) {
+            requestBody.categories = selectedCategories;
+        }
+
         // 发送 AJAX 请求到后端 API
         // 使用 fetch API 进行异步 HTTP 请求
         const response = await fetch('/api/recommend', {
@@ -119,7 +223,7 @@ async function getRecommendations(mood) {
             headers: {
                 'Content-Type': 'application/json',      // 指定请求体格式为 JSON
             },
-            body: JSON.stringify({ mood: mood }),        // 将心情数据转换为 JSON 字符串
+            body: JSON.stringify(requestBody),           // 将心情和类别数据转换为 JSON 字符串
         });
 
         // 解析响应 JSON 数据
@@ -161,16 +265,18 @@ async function getRecommendations(mood) {
  * 显示推荐结果
  *
  * 将推荐的书籍数据渲染为 HTML 卡片并显示在页面上
- * 使用动画效果使卡片依次出现，提升用户体验
+ * 支持按类别分组显示或列表显示
  *
- * @param {Array} books - 推荐书籍数组，每个元素包含 title、author、reason
+ * @param {Array} books - 推荐书籍数组，每个元素包含 title、author、reason、category、subcategory
  *
  * 数据格式示例：
  * [
  *   {
  *     title: "书名",
  *     author: "作者",
- *     reason: "推荐理由"
+ *     reason: "推荐理由",
+ *     category: "文学类",
+ *     subcategory: "小说"
  *   }
  * ]
  */
@@ -181,35 +287,228 @@ function displayRecommendations(books) {
         return;
     }
 
+    // 保存当前推荐结果
+    currentRecommendations = books;
+    selectedFilter = 'all';
+
     // 清空之前的结果
-    // 确保每次显示的都是最新的推荐
     bookList.innerHTML = '';
 
-    // 动态创建推荐卡片
-    // 遍历每本书，创建对应的 HTML 元素
-    books.forEach((book, index) => {
-        // 创建卡片容器
-        const bookCard = document.createElement('div');
-        bookCard.className = 'book-card';
+    // 统计不同类别的数量
+    const categoryCount = new Set(books.map(book => book.category)).size;
 
-        // 设置动画延迟，使卡片依次出现
-        // 每张卡片延迟 0.1 秒，创造流畅的动画效果
-        bookCard.style.animationDelay = `${index * 0.1}s`;
+    // 如果有 3 个或以上不同类别，使用分组展示
+    if (categoryCount >= 3) {
+        displayGroupedRecommendations(books);
+    } else {
+        displayListRecommendations(books);
+    }
 
-        // 填充卡片内容
-        // 使用 escapeHtml 防止 XSS 攻击
-        bookCard.innerHTML = `
-            <h3>${escapeHtml(book.title)}</h3>
-            <p class="book-author">作者：${escapeHtml(book.author)}</p>
-            <p class="book-reason">${escapeHtml(book.reason)}</p>
-        `;
-
-        // 将卡片添加到列表中
-        bookList.appendChild(bookCard);
-    });
+    // 渲染类别筛选器
+    renderCategoryFilter(books);
 
     // 显示推荐区域
     showRecommendations();
+}
+
+/**
+ * 按类别分组显示推荐结果
+ *
+ * @param {Array} books - 推荐书籍数组
+ */
+function displayGroupedRecommendations(books) {
+    // 按类别分组
+    const groupedBooks = {};
+    books.forEach(book => {
+        const category = book.category || '其他';
+        if (!groupedBooks[category]) {
+            groupedBooks[category] = [];
+        }
+        groupedBooks[category].push(book);
+    });
+
+    // 渲染每个分组
+    let cardIndex = 0;
+    Object.keys(groupedBooks).forEach(category => {
+        // 创建分组容器
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'category-group';
+        groupDiv.dataset.category = category;
+
+        // 创建分组标题
+        const groupTitle = document.createElement('h3');
+        groupTitle.className = 'category-group-title';
+        groupTitle.textContent = category;
+        groupDiv.appendChild(groupTitle);
+
+        // 创建该分组的书籍列表
+        groupedBooks[category].forEach(book => {
+            const bookCard = createBookCard(book, cardIndex++);
+            groupDiv.appendChild(bookCard);
+        });
+
+        bookList.appendChild(groupDiv);
+    });
+}
+
+/**
+ * 列表形式显示推荐结果
+ *
+ * @param {Array} books - 推荐书籍数组
+ */
+function displayListRecommendations(books) {
+    books.forEach((book, index) => {
+        const bookCard = createBookCard(book, index);
+        bookList.appendChild(bookCard);
+    });
+}
+
+/**
+ * 创建书籍卡片
+ *
+ * @param {Object} book - 书籍数据
+ * @param {number} index - 卡片索引（用于动画延迟）
+ * @returns {HTMLElement} 书籍卡片元素
+ */
+function createBookCard(book, index) {
+    const bookCard = document.createElement('div');
+    bookCard.className = 'book-card';
+    bookCard.dataset.category = book.category || '';
+    bookCard.style.animationDelay = `${index * 0.1}s`;
+
+    // 构建类别标签 HTML
+    let categoryBadgeHtml = '';
+    if (book.category) {
+        const badgeClass = getCategoryBadgeClass(book.category);
+        categoryBadgeHtml = `<span class="category-badge ${badgeClass}">${escapeHtml(book.category)}</span>`;
+        if (book.subcategory) {
+            categoryBadgeHtml += ` <span class="subcategory-badge">${escapeHtml(book.subcategory)}</span>`;
+        }
+    }
+
+    bookCard.innerHTML = `
+        <div class="book-header">
+            <h3>${escapeHtml(book.title)}</h3>
+            ${categoryBadgeHtml ? `<div class="book-badges">${categoryBadgeHtml}</div>` : ''}
+        </div>
+        <p class="book-author">作者：${escapeHtml(book.author)}</p>
+        <p class="book-reason">${escapeHtml(book.reason)}</p>
+    `;
+
+    return bookCard;
+}
+
+/**
+ * 根据类别名称获取对应的徽章样式类
+ *
+ * @param {string} category - 类别名称
+ * @returns {string} CSS 类名
+ */
+function getCategoryBadgeClass(category) {
+    const categoryMap = {
+        '文学类': 'badge-literature',
+        '社科类': 'badge-social',
+        '科技类': 'badge-tech',
+        '商业类': 'badge-business',
+        '生活类': 'badge-lifestyle',
+        '成长类': 'badge-growth',
+        '艺术类': 'badge-arts',
+        '儿童类': 'badge-children',
+        '漫画类': 'badge-comics',
+        '悬疑推理': 'badge-mystery',
+        '科幻奇幻': 'badge-scifi',
+        '言情类': 'badge-romance'
+    };
+    return categoryMap[category] || 'badge-default';
+}
+
+/**
+ * 渲染类别筛选器
+ *
+ * 根据推荐结果中的类别生成筛选标签
+ *
+ * @param {Array} books - 推荐书籍数组
+ */
+function renderCategoryFilter(books) {
+    // 提取所有唯一的类别
+    const categories = [...new Set(books.map(book => book.category).filter(c => c))];
+
+    // 如果只有一个类别或没有类别，不显示筛选器
+    if (categories.length <= 1) {
+        categoryFilter.style.display = 'none';
+        return;
+    }
+
+    // 清空筛选标签容器
+    filterTags.innerHTML = '';
+
+    // 创建"全部"标签
+    const allTag = document.createElement('button');
+    allTag.className = 'filter-tag active';
+    allTag.textContent = '全部';
+    allTag.dataset.category = 'all';
+    allTag.addEventListener('click', () => filterByCategory('all'));
+    filterTags.appendChild(allTag);
+
+    // 创建各类别标签
+    categories.forEach(category => {
+        const tag = document.createElement('button');
+        tag.className = 'filter-tag';
+        tag.textContent = category;
+        tag.dataset.category = category;
+        tag.addEventListener('click', () => filterByCategory(category));
+        filterTags.appendChild(tag);
+    });
+
+    // 显示筛选器
+    categoryFilter.style.display = 'block';
+}
+
+/**
+ * 按类别筛选推荐结果
+ *
+ * @param {string} category - 要筛选的类别，'all' 表示显示全部
+ */
+function filterByCategory(category) {
+    selectedFilter = category;
+
+    // 更新筛选标签的激活状态
+    const allTags = filterTags.querySelectorAll('.filter-tag');
+    allTags.forEach(tag => {
+        if (tag.dataset.category === category) {
+            tag.classList.add('active');
+        } else {
+            tag.classList.remove('active');
+        }
+    });
+
+    // 筛选显示书籍卡片
+    const allCards = bookList.querySelectorAll('.book-card');
+    const allGroups = bookList.querySelectorAll('.category-group');
+
+    if (category === 'all') {
+        // 显示所有卡片和分组
+        allCards.forEach(card => card.style.display = 'block');
+        allGroups.forEach(group => group.style.display = 'block');
+    } else {
+        // 只显示匹配类别的卡片
+        allCards.forEach(card => {
+            if (card.dataset.category === category) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // 只显示匹配类别的分组
+        allGroups.forEach(group => {
+            if (group.dataset.category === category) {
+                group.style.display = 'block';
+            } else {
+                group.style.display = 'none';
+            }
+        });
+    }
 }
 
 // ============================================

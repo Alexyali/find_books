@@ -41,6 +41,20 @@
                         </div>
                     </div>
 
+                    <!-- 类别选择器 -->
+                    <div class="category-selector">
+                        <button type="button" class="category-toggle" id="categoryToggle">
+                            <span class="toggle-text">选择感兴趣的类别（可选）</span>
+                            <span class="toggle-icon">▼</span>
+                        </button>
+                        <div class="category-options" id="categoryOptions" style="display: none;">
+                            <p class="category-hint">选择你感兴趣的书籍类别，我们会优先推荐这些类别的书籍</p>
+                            <div class="category-grid" id="categoryGrid">
+                                <!-- 类别选项将通过 JavaScript 动态加载 -->
+                            </div>
+                        </div>
+                    </div>
+
                     <button type="submit" class="submit-btn" id="submitBtn">
                         获取推荐
                     </button>
@@ -63,6 +77,15 @@
             <!-- 推荐结果展示区域 -->
             <section class="recommendations" id="recommendations" style="display: none;">
                 <h2>为你推荐的书籍</h2>
+
+                <!-- 类别筛选器 -->
+                <div class="category-filter" id="categoryFilter" style="display: none;">
+                    <p class="filter-label">按类别筛选：</p>
+                    <div class="filter-tags" id="filterTags">
+                        <!-- 筛选标签将通过 JavaScript 动态生成 -->
+                    </div>
+                </div>
+
                 <div class="book-list" id="bookList">
                     <!-- 推荐卡片将通过 JavaScript 动态插入 -->
                 </div>

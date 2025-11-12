@@ -37,38 +37,132 @@ client = OpenAI(
     base_url="https://ark.cn-beijing.volces.com/api/v3",
 )
 
+# 书籍类别数据结构
+# 定义系统支持的所有书籍类别及其子类别
+BOOK_CATEGORIES = {
+    "literature": {
+        "id": "literature",
+        "name": "文学类",
+        "subcategories": ["小说", "散文", "诗歌", "经典名著", "当代文学", "外国文学"]
+    },
+    "social_science": {
+        "id": "social_science",
+        "name": "社科类",
+        "subcategories": ["历史", "哲学", "心理学", "社会学", "政治", "经济学"]
+    },
+    "technology": {
+        "id": "technology",
+        "name": "科技类",
+        "subcategories": ["科普", "互联网", "人工智能", "编程技术", "科学史"]
+    },
+    "business": {
+        "id": "business",
+        "name": "商业类",
+        "subcategories": ["管理", "创业", "营销", "投资理财", "职场"]
+    },
+    "lifestyle": {
+        "id": "lifestyle",
+        "name": "生活类",
+        "subcategories": ["健康养生", "美食", "旅行", "家居", "时尚"]
+    },
+    "personal_growth": {
+        "id": "personal_growth",
+        "name": "成长类",
+        "subcategories": ["自我提升", "励志", "学习方法", "时间管理", "沟通技巧"]
+    },
+    "arts": {
+        "id": "arts",
+        "name": "艺术类",
+        "subcategories": ["绘画", "音乐", "摄影", "设计", "电影"]
+    },
+    "children": {
+        "id": "children",
+        "name": "儿童类",
+        "subcategories": ["绘本", "儿童文学", "科普读物", "教育"]
+    },
+    "comics": {
+        "id": "comics",
+        "name": "漫画类",
+        "subcategories": ["国漫", "日漫", "欧美漫画"]
+    },
+    "mystery": {
+        "id": "mystery",
+        "name": "悬疑推理",
+        "subcategories": ["推理小说", "悬疑小说", "犯罪小说"]
+    },
+    "scifi_fantasy": {
+        "id": "scifi_fantasy",
+        "name": "科幻奇幻",
+        "subcategories": ["科幻小说", "奇幻小说", "玄幻小说"]
+    },
+    "romance": {
+        "id": "romance",
+        "name": "言情类",
+        "subcategories": ["现代言情", "古代言情", "都市情感"]
+    }
+}
 
-def build_prompt(mood):
+
+def build_prompt(mood, categories=None):
     """
-    构建推荐提示词，根据用户心情生成合适的 prompt
+    构建推荐提示词，根据用户心情和类别偏好生成合适的 prompt
 
-    此函数将用户的心情描述转换为结构化的提示词，
+    此函数将用户的心情描述和可选的类别偏好转换为结构化的提示词，
     指导 GPT 模型生成符合要求的书籍推荐结果。
 
     参数：
         mood (str): 用户输入的心情描述
+        categories (list, optional): 用户选择的类别 ID 列表
 
     返回：
         str: 格式化的提示词，包含推荐要求和输出格式说明
 
     示例：
-        >>> build_prompt("开心")
+        >>> build_prompt("开心", ["literature", "arts"])
         "你是一位专业的图书推荐专家。用户当前的心情是：开心..."
     """
-    prompt = f"""你是一位专业的图书推荐专家。用户当前的心情是：{mood}
+    # 基础提示词
+    prompt = f"""你是一位专业的图书推荐专家。用户当前的心情是：{mood}"""
+
+    # 如果用户指定了类别偏好，添加到提示词中
+    if categories:
+        category_names = [BOOK_CATEGORIES[cat]["name"] for cat in categories]
+        prompt += f"\n\n用户偏好的书籍类别：{', '.join(category_names)}"
+        prompt += "\n请优先推荐这些类别的书籍。"
+
+    # 添加推荐要求和格式说明
+    prompt += """
 
 请根据用户的心情推荐 3-5 本适合的书籍。对于每本书，请提供：
 1. 书名
 2. 作者
 3. 推荐理由（说明为什么这本书适合用户当前的心情）
+4. 书籍类别（从以下类别中选择）
+5. 书籍子类别（可选）
+
+可用的书籍类别：
+- 文学类：小说、散文、诗歌、经典名著、当代文学、外国文学
+- 社科类：历史、哲学、心理学、社会学、政治、经济学
+- 科技类：科普、互联网、人工智能、编程技术、科学史
+- 商业类：管理、创业、营销、投资理财、职场
+- 生活类：健康养生、美食、旅行、家居、时尚
+- 成长类：自我提升、励志、学习方法、时间管理、沟通技巧
+- 艺术类：绘画、音乐、摄影、设计、电影
+- 儿童类：绘本、儿童文学、科普读物、教育
+- 漫画类：国漫、日漫、欧美漫画
+- 悬疑推理：推理小说、悬疑小说、犯罪小说
+- 科幻奇幻：科幻小说、奇幻小说、玄幻小说
+- 言情类：现代言情、古代言情、都市情感
 
 请以 JSON 格式返回推荐结果，格式如下：
 [
-  {{
+  {
     "title": "书名",
     "author": "作者",
-    "reason": "推荐理由"
-  }}
+    "reason": "推荐理由",
+    "category": "类别名称（如：文学类）",
+    "subcategory": "子类别（如：小说）"
+  }
 ]
 
 只返回 JSON 数组，不要包含其他文字说明。"""
@@ -77,7 +171,7 @@ def build_prompt(mood):
 
 def parse_response(response_text):
     """
-    解析 API 响应，提取书名、作者和推荐理由
+    解析 API 响应，提取书名、作者、推荐理由和类别信息
 
     此函数负责将 OpenAI API 返回的文本响应解析为结构化的数据。
     支持直接 JSON 解析和从文本中提取 JSON 的容错处理。
@@ -90,13 +184,15 @@ def parse_response(response_text):
             - title (str): 书名
             - author (str): 作者
             - reason (str): 推荐理由
+            - category (str): 书籍类别
+            - subcategory (str, optional): 书籍子类别
 
     异常：
         ValueError: 当响应格式不正确或缺少必需字段时抛出
 
     示例：
-        >>> parse_response('[{"title":"书名","author":"作者","reason":"理由"}]')
-        [{'title': '书名', 'author': '作者', 'reason': '理由'}]
+        >>> parse_response('[{"title":"书名","author":"作者","reason":"理由","category":"文学类","subcategory":"小说"}]')
+        [{'title': '书名', 'author': '作者', 'reason': '理由', 'category': '文学类', 'subcategory': '小说'}]
     """
     import json
     try:
@@ -112,8 +208,17 @@ def parse_response(response_text):
         # 确保每个推荐都有必需的字段
         # 验证数据完整性，防止缺少关键信息
         for rec in recommendations:
+            # 检查基本必需字段
             if not all(key in rec for key in ['title', 'author', 'reason']):
                 raise ValueError("推荐数据缺少必需字段")
+
+            # 检查类别字段，如果缺少则设置默认值
+            if 'category' not in rec:
+                rec['category'] = '其他'
+
+            # subcategory 是可选字段，如果不存在则设置为空字符串
+            if 'subcategory' not in rec:
+                rec['subcategory'] = ''
 
         return recommendations
     except json.JSONDecodeError:
@@ -124,23 +229,32 @@ def parse_response(response_text):
         if json_match:
             try:
                 recommendations = json.loads(json_match.group())
+                # 对提取的 JSON 也进行字段验证和补充
+                for rec in recommendations:
+                    if not all(key in rec for key in ['title', 'author', 'reason']):
+                        raise ValueError("推荐数据缺少必需字段")
+                    if 'category' not in rec:
+                        rec['category'] = '其他'
+                    if 'subcategory' not in rec:
+                        rec['subcategory'] = ''
                 return recommendations
             except:
                 pass
         raise ValueError("无法解析 API 响应")
 
 
-def get_book_recommendations(mood):
+def get_book_recommendations(mood, categories=None):
     """
-    调用 OpenAI API，传递心情描述并获取推荐
+    调用 OpenAI API，传递心情描述和类别偏好并获取推荐
 
     这是核心推荐函数，负责整合提示词构建、API 调用和响应解析。
 
     参数：
         mood (str): 用户输入的心情描述
+        categories (list, optional): 用户选择的类别 ID 列表
 
     返回：
-        list: 推荐书籍列表，每个元素包含 title、author、reason
+        list: 推荐书籍列表，每个元素包含 title、author、reason、category、subcategory
 
     异常：
         Exception: 当 API 调用失败时抛出，包含详细错误信息
@@ -152,8 +266,8 @@ def get_book_recommendations(mood):
     """
     try:
         # 构建提示词
-        # 将用户心情转换为 GPT 可理解的推荐请求
-        prompt = build_prompt(mood)
+        # 将用户心情和类别偏好转换为 GPT 可理解的推荐请求
+        prompt = build_prompt(mood, categories)
 
         # 调用 OpenAI API，设置 30 秒超时
         # 使用 chat completions API 进行对话式交互
@@ -166,8 +280,8 @@ def get_book_recommendations(mood):
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,  # 控制输出的随机性，0.7 提供适度的创造性
-            max_tokens=1000,  # 限制响应长度，避免过长的输出
-            timeout=30  # 30 秒超时，符合需求规范
+            max_tokens=1500,  # 增加限制以容纳类别信息
+            timeout=60  # 60 秒超时，符合需求规范
         )
 
         # 提取响应内容
@@ -200,6 +314,30 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    """
+    类别 API 端点，返回所有可用的书籍类别列表
+
+    处理 GET /api/categories 请求，返回系统支持的所有书籍类别。
+
+    成功响应 (200)：
+        {
+            "categories": [
+                {
+                    "id": "literature",
+                    "name": "文学类",
+                    "subcategories": ["小说", "散文", "诗歌", ...]
+                },
+                ...
+            ]
+        }
+    """
+    # 将 BOOK_CATEGORIES 字典转换为列表格式
+    categories_list = list(BOOK_CATEGORIES.values())
+    return jsonify({'categories': categories_list}), 200
+
+
 @app.route('/api/recommend', methods=['POST'])
 def recommend():
     """
@@ -209,7 +347,8 @@ def recommend():
 
     请求格式：
         {
-            "mood": "用户心情描述"
+            "mood": "用户心情描述",
+            "categories": ["literature", "technology"]  // 可选
         }
 
     成功响应 (200)：
@@ -218,7 +357,9 @@ def recommend():
                 {
                     "title": "书名",
                     "author": "作者",
-                    "reason": "推荐理由"
+                    "reason": "推荐理由",
+                    "category": "类别",
+                    "subcategory": "子类别"
                 }
             ]
         }
@@ -251,9 +392,23 @@ def recommend():
         if len(mood) > 500:
             return jsonify({'error': '心情描述不能超过 500 字符'}), 400
 
+        # 获取可选的类别参数
+        categories = data.get('categories', [])
+
+        # 验证 categories 参数格式
+        if categories is not None:
+            # 确保 categories 是列表类型
+            if not isinstance(categories, list):
+                return jsonify({'error': 'categories 参数必须是数组'}), 400
+
+            # 验证每个类别 ID 是否有效
+            for category_id in categories:
+                if category_id not in BOOK_CATEGORIES:
+                    return jsonify({'error': f'无效的类别 ID: {category_id}'}), 400
+
         # 调用 OpenAI 集成函数获取推荐结果
         # 这是核心业务逻辑，调用 GPT 模型生成推荐
-        recommendations = get_book_recommendations(mood)
+        recommendations = get_book_recommendations(mood, categories if categories else None)
 
         # 返回 JSON 格式的推荐数据
         # 成功响应，返回 200 状态码

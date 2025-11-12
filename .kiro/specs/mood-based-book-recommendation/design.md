@@ -48,9 +48,11 @@ graph TB
 
 **关键元素:**
 - 心情输入表单（文本框 + 预设选项）
+- 书籍类别选择器（可选，支持多选）
 - 提交按钮
 - 加载状态指示器
-- 推荐结果展示区域
+- 推荐结果展示区域（支持类别分组和筛选）
+- 类别筛选器（用于过滤已显示的推荐结果）
 - 错误提示区域
 
 #### 2. 样式表 (style.css)
@@ -70,8 +72,10 @@ graph TB
 
 **关键函数:**
 ```javascript
-- submitMood() - 提交心情数据
-- displayRecommendations(data) - 渲染推荐结果
+- submitMood() - 提交心情数据和可选的类别偏好
+- displayRecommendations(data) - 渲染推荐结果（支持类别分组）
+- filterByCategory(category) - 按类别筛选显示的推荐
+- renderCategoryTags() - 渲染类别标签
 - showLoading() - 显示加载状态
 - showError(message) - 显示错误信息
 ```
@@ -93,11 +97,12 @@ graph TB
 - 响应：HTML 页面
 
 **POST /api/recommend**
-- 描述：接收心情输入，返回书籍推荐
+- 描述：接收心情输入和可选的类别偏好，返回书籍推荐
 - 请求体：
 ```json
 {
-  "mood": "string"
+  "mood": "string",
+  "categories": ["string"] // 可选，用户选择的类别列表
 }
 ```
 - 响应体（成功）：
@@ -107,7 +112,9 @@ graph TB
     {
       "title": "书名",
       "author": "作者",
-      "reason": "推荐理由"
+      "reason": "推荐理由",
+      "category": "书籍类别",
+      "subcategory": "子类别" // 可选
     }
   ]
 }
@@ -116,6 +123,21 @@ graph TB
 ```json
 {
   "error": "错误信息"
+}
+```
+
+**GET /api/categories**
+- 描述：获取所有可用的书籍类别列表
+- 响应体：
+```json
+{
+  "categories": [
+    {
+      "id": "literature",
+      "name": "文学类",
+      "subcategories": ["小说", "散文", "诗歌", "经典名著", "当代文学", "外国文学"]
+    }
+  ]
 }
 ```
 
@@ -129,9 +151,10 @@ graph TB
 
 **关键函数:**
 ```python
-- get_book_recommendations(mood: str) -> list
-- build_prompt(mood: str) -> str
+- get_book_recommendations(mood: str, categories: list = None) -> list
+- build_prompt(mood: str, categories: list = None) -> str
 - parse_response(response: str) -> list
+- get_available_categories() -> dict
 ```
 
 #### 3. 配置管理
@@ -152,16 +175,28 @@ graph TB
 
 ```python
 class MoodRequest:
-    mood: str  # 用户心情描述，1-500 字符
+    mood: str                    # 用户心情描述，1-500 字符
+    categories: List[str] = []   # 可选，用户选择的类别列表
 ```
 
 ### 推荐模型
 
 ```python
 class BookRecommendation:
-    title: str      # 书名
-    author: str     # 作者
-    reason: str     # 推荐理由
+    title: str         # 书名
+    author: str        # 作者
+    reason: str        # 推荐理由
+    category: str      # 书籍主类别
+    subcategory: str   # 书籍子类别（可选）
+```
+
+### 类别模型
+
+```python
+class BookCategory:
+    id: str                      # 类别唯一标识
+    name: str                    # 类别显示名称
+    subcategories: List[str]     # 子类别列表
 ```
 
 ### 响应模型
@@ -169,6 +204,9 @@ class BookRecommendation:
 ```python
 class RecommendationResponse:
     recommendations: List[BookRecommendation]  # 推荐列表，3-5 本书
+
+class CategoryResponse:
+    categories: List[BookCategory]  # 所有可用类别
 ```
 
 ## 错误处理
@@ -273,6 +311,127 @@ class RecommendationResponse:
    - 使用 CSS 动画而非 JavaScript 动画
    - 延迟加载非关键资源
 
+## 书籍类别功能设计
+
+### 类别数据结构
+
+系统支持 12 个主要类别，每个类别包含多个子类别：
+
+```python
+BOOK_CATEGORIES = {
+    "literature": {
+        "name": "文学类",
+        "subcategories": ["小说", "散文", "诗歌", "经典名著", "当代文学", "外国文学"]
+    },
+    "social_science": {
+        "name": "社科类",
+        "subcategories": ["历史", "哲学", "心理学", "社会学", "政治", "经济学"]
+    },
+    "technology": {
+        "name": "科技类",
+        "subcategories": ["科普", "互联网", "人工智能", "编程技术", "科学史"]
+    },
+    "business": {
+        "name": "商业类",
+        "subcategories": ["管理", "创业", "营销", "投资理财", "职场"]
+    },
+    "lifestyle": {
+        "name": "生活类",
+        "subcategories": ["健康养生", "美食", "旅行", "家居", "时尚"]
+    },
+    "personal_growth": {
+        "name": "成长类",
+        "subcategories": ["自我提升", "励志", "学习方法", "时间管理", "沟通技巧"]
+    },
+    "arts": {
+        "name": "艺术类",
+        "subcategories": ["绘画", "音乐", "摄影", "设计", "电影"]
+    },
+    "children": {
+        "name": "儿童类",
+        "subcategories": ["绘本", "儿童文学", "科普读物", "教育"]
+    },
+    "comics": {
+        "name": "漫画类",
+        "subcategories": ["国漫", "日漫", "欧美漫画"]
+    },
+    "mystery": {
+        "name": "悬疑推理",
+        "subcategories": ["推理小说", "悬疑小说", "犯罪小说"]
+    },
+    "scifi_fantasy": {
+        "name": "科幻奇幻",
+        "subcategories": ["科幻小说", "奇幻小说", "玄幻小说"]
+    },
+    "romance": {
+        "name": "言情类",
+        "subcategories": ["现代言情", "古代言情", "都市情感"]
+    }
+}
+```
+
+### 类别选择交互设计
+
+**前端实现方案：**
+
+1. **类别选择器组件**
+   - 使用下拉菜单或标签云形式展示类别
+   - 支持多选（使用复选框或标签点击）
+   - 可折叠/展开，不占用过多空间
+   - 默认状态为折叠，显示"选择感兴趣的类别（可选）"
+
+2. **类别筛选器组件**
+   - 在推荐结果上方显示
+   - 显示所有出现在推荐结果中的类别
+   - 点击类别标签进行筛选
+   - 支持"全部"选项清除筛选
+
+### Prompt 构建策略
+
+当用户选择类别时，prompt 需要包含类别偏好：
+
+```python
+def build_prompt(mood: str, categories: list = None) -> str:
+    base_prompt = f"用户当前的心情是：{mood}"
+
+    if categories:
+        category_names = [BOOK_CATEGORIES[cat]["name"] for cat in categories]
+        category_prompt = f"\n用户偏好的书籍类别：{', '.join(category_names)}"
+        base_prompt += category_prompt
+
+    # 要求 GPT 在响应中包含类别信息
+    format_instruction = """
+    请以 JSON 格式返回，每本书必须包含 category 和 subcategory 字段：
+    [
+      {
+        "title": "书名",
+        "author": "作者",
+        "reason": "推荐理由",
+        "category": "主类别",
+        "subcategory": "子类别"
+      }
+    ]
+    """
+
+    return base_prompt + format_instruction
+```
+
+### 前端展示策略
+
+**方案 1：类别分组展示（默认）**
+- 按类别将推荐结果分组
+- 每个分组显示类别标签
+- 适合未指定类别或推荐结果涵盖多个类别的情况
+
+**方案 2：列表展示 + 类别标签**
+- 推荐结果以列表形式展示
+- 每本书显示类别标签（badge）
+- 适合指定了特定类别的情况
+
+**实现建议：**
+- 当推荐结果包含 3 个或以上不同类别时，使用分组展示
+- 当推荐结果类别较集中时，使用列表展示
+
 ## 扩展性考虑
 
 未来可能的扩展方向：
@@ -281,16 +440,20 @@ class RecommendationResponse:
    - 用户注册和登录
    - 保存推荐历史
    - 个性化推荐
+   - 记住用户的类别偏好
 
 2. **数据持久化**
    - 添加数据库存储推荐记录
    - 分析用户偏好
+   - 统计热门类别
 
 3. **更多推荐维度**
    - 根据阅读历史推荐
    - 结合时间、天气等因素
    - 多语言支持
+   - 类别组合推荐（跨类别）
 
 4. **社交功能**
    - 分享推荐结果
    - 用户评价和反馈
+   - 类别热度排行
