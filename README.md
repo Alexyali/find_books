@@ -1,11 +1,11 @@
 # 智能书籍推荐系统
 
-基于用户心情的智能书籍推荐网页应用。用户可以输入或选择当前的心情状态，系统将通过 OpenAI API 分析用户心情并推荐适合的书籍。
+基于用户心情的智能书籍推荐网页应用。用户可以输入或选择当前的心情状态，系统将通过火山引擎豆包大模型分析用户心情并推荐适合的书籍。
 
 ## 功能特点
 
 - 📝 自定义心情输入或快速选择预设心情
-- 🤖 基于 OpenAI GPT 模型的智能推荐
+- 🤖 基于火山引擎豆包大模型的智能推荐
 - 📚 每次推荐 3-5 本书籍，包含书名、作者和推荐理由
 - 💫 简洁美观的响应式界面设计
 - ⚡ 实时加载状态和友好的错误提示
@@ -20,7 +20,7 @@
 **后端:**
 - Python 3.8+
 - Flask
-- OpenAI Python SDK
+- 火山引擎 ARK SDK (volcenginesdkarkruntime)
 - python-dotenv
 
 ## 安装步骤
@@ -48,19 +48,23 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-编辑 `.env` 文件，填入你的 OpenAI API 密钥：
+编辑 `.env` 文件，填入你的火山引擎 ARK API 密钥：
 
 ```
-OPENAI_API_KEY=your_actual_api_key_here
+ARK_API_KEY=your_actual_api_key_here
 FLASK_ENV=development
 PORT=5000
 ```
 
-**获取 OpenAI API 密钥:**
-1. 访问 [OpenAI Platform](https://platform.openai.com/api-keys)
+**获取火山引擎 ARK API 密钥:**
+1. 访问 [火山引擎控制台](https://console.volcengine.com/ark)
 2. 登录或注册账号
-3. 创建新的 API 密钥
-4. 复制密钥并粘贴到 `.env` 文件中
+3. 在「API 访问」页面创建新的 API Key
+4. 复制 API Key 并粘贴到 `.env` 文件中
+
+**参考文档:**
+- [火山引擎 ARK 快速开始](https://www.volcengine.com/docs/82379/1099455)
+- [API Key 管理](https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey)
 
 ## 运行方法
 
@@ -136,25 +140,33 @@ mood-based-book-recommendation/
 
 ### Q: 提示 "API 密钥无效"
 
-A: 请检查 `.env` 文件中的 `OPENAI_API_KEY` 是否正确配置。确保密钥没有多余的空格或引号。
+A: 请检查 `.env` 文件中的 `ARK_API_KEY` 是否正确配置。确保密钥没有多余的空格或引号。
 
 ### Q: 提示 "API 配额不足"
 
-A: 你的 OpenAI 账户可能已达到使用限额。请访问 [OpenAI 账户页面](https://platform.openai.com/account/usage) 查看使用情况。
+A: 你的火山引擎账户可能已达到使用限额。请访问 [火山引擎控制台](https://console.volcengine.com/ark) 查看使用情况和账户余额。
 
 ### Q: 请求超时
 
-A: OpenAI API 响应时间可能较长。系统设置了 30 秒超时，如果超时请稍后重试。
+A: API 响应时间可能较长。如果超时请稍后重试，或检查网络连接。
 
 ### Q: 网络连接失败
 
-A: 请检查你的网络连接，确保可以访问 OpenAI API 服务。
+A: 请检查你的网络连接，确保可以访问火山引擎 ARK API 服务。
+
+### Q: 如何测试 API 连接？
+
+A: 运行测试脚本验证配置：
+```bash
+python test_api.py
+```
 
 ## 安全注意事项
 
 - ⚠️ **不要将 `.env` 文件提交到版本控制系统**
 - ⚠️ **不要在前端代码中暴露 API 密钥**
 - ⚠️ **定期检查 API 使用情况，避免意外费用**
+- ⚠️ **妥善保管 ARK_API_KEY，避免泄露**
 
 ## 部署建议
 
@@ -165,7 +177,7 @@ A: 请检查你的网络连接，确保可以访问 OpenAI API 服务。
 web: python app.py
 ```
 
-2. 在 Heroku 控制台设置环境变量 `OPENAI_API_KEY`
+2. 在 Heroku 控制台设置环境变量 `ARK_API_KEY`
 
 3. 部署应用：
 ```bash
@@ -175,7 +187,7 @@ git push heroku main
 ### Railway 部署
 
 1. 连接 GitHub 仓库
-2. 在 Railway 控制台设置环境变量
+2. 在 Railway 控制台设置环境变量 `ARK_API_KEY`
 3. Railway 会自动检测并部署 Flask 应用
 
 ## 许可证
@@ -185,6 +197,12 @@ MIT License
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
+
+## 相关链接
+
+- [火山引擎 ARK 文档](https://www.volcengine.com/docs/82379/1099455)
+- [豆包大模型](https://www.volcengine.com/product/doubao)
+- [API Key 管理](https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey)
 
 ## 联系方式
 
