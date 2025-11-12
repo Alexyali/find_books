@@ -7,7 +7,7 @@
 import os
 import json
 from dotenv import load_dotenv
-from openai import OpenAI
+from volcenginesdkarkruntime import Ark
 
 # 加载环境变量
 load_dotenv()
@@ -90,11 +90,8 @@ def test_book_recommendation(mood):
 
     try:
         # 初始化客户端
-        print("正在初始化 OpenAI 客户端...")
-        client = OpenAI(
-            api_key=api_key,
-            base_url="https://ark.cn-beijing.volces.com/api/v3",
-        )
+        print("正在初始化 Ark 客户端...")
+        client = Ark(api_key=api_key)
         print("✓ 客户端初始化成功")
         print()
 
@@ -117,6 +114,7 @@ def test_book_recommendation(mood):
                 {"role": "system", "content": "你是一位专业的图书推荐专家，擅长根据用户心情推荐合适的书籍。"},
                 {"role": "user", "content": prompt}
             ],
+            reasoning_effort = "minimal",
             temperature=0.7,
             max_tokens=1000
         )

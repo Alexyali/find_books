@@ -17,7 +17,7 @@
 import os
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
-from openai import OpenAI
+from volcenginesdkarkruntime import Ark
 
 # 加载环境变量
 # 从 .env 文件中读取配置信息（如 API 密钥）
@@ -30,12 +30,9 @@ app = Flask(__name__)
 # 从环境变量中获取 API 密钥
 app.config['ARK_API_KEY'] = os.getenv('ARK_API_KEY')
 
-# 初始化 OpenAI 客户端（使用火山引擎 ARK API）
+# 初始化 Ark 客户端（使用火山引擎 ARK API）
 # 用于后续调用 API 服务
-client = OpenAI(
-    api_key=os.environ.get("ARK_API_KEY"),
-    base_url="https://ark.cn-beijing.volces.com/api/v3",
-)
+client = Ark(api_key=os.environ.get("ARK_API_KEY"))
 
 # 书籍类别数据结构
 # 定义系统支持的所有书籍类别及其子类别
@@ -269,16 +266,17 @@ def get_book_recommendations(mood, categories=None):
         # 将用户心情和类别偏好转换为 GPT 可理解的推荐请求
         prompt = build_prompt(mood, categories)
 
-        # 调用 OpenAI API，设置 30 秒超时
+        # 调用 Ark API
         # 使用 chat completions API 进行对话式交互
         response = client.chat.completions.create(
-            model="doubao-seed-1-6-251015",  # 使用 GPT-3.5 Turbo 模型，性价比高
+            model="doubao-seed-1-6-251015",
             messages=[
                 # system 消息：定义 AI 助手的角色和行为
                 {"role": "system", "content": "你是一位专业的图书推荐专家，擅长根据用户心情推荐合适的书籍。"},
                 # user 消息：包含用户的实际请求
                 {"role": "user", "content": prompt}
             ],
+            reasoning_effort = "minimal",  # 控制推理时长，最快推理
             temperature=0.7,  # 控制输出的随机性，0.7 提供适度的创造性
             max_tokens=1500,  # 增加限制以容纳类别信息
             timeout=60  # 60 秒超时，符合需求规范

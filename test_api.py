@@ -6,7 +6,7 @@
 
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
+from volcenginesdkarkruntime import Ark
 
 # 加载环境变量
 load_dotenv()
@@ -30,11 +30,8 @@ def test_api_connection():
 
     try:
         # 初始化客户端
-        print("正在初始化 OpenAI 客户端...")
-        client = OpenAI(
-            api_key=api_key,
-            base_url="https://ark.cn-beijing.volces.com/api/v3",
-        )
+        print("正在初始化 Ark 客户端...")
+        client = Ark(api_key=api_key)
         print("✓ 客户端初始化成功")
         print()
 
@@ -46,6 +43,7 @@ def test_api_connection():
                 {"role": "system", "content": "你是一个有帮助的助手。"},
                 {"role": "user", "content": "请用一句话介绍你自己。"}
             ],
+            reasoning_effort = "minimal",
             temperature=0.7,
             max_tokens=100
         )

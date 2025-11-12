@@ -7,7 +7,7 @@
 import os
 import json
 from dotenv import load_dotenv
-from openai import OpenAI
+from volcenginesdkarkruntime import Ark
 
 # 加载环境变量
 load_dotenv()
@@ -105,10 +105,7 @@ def test_single_mood():
 
     try:
         # 初始化客户端
-        client = OpenAI(
-            api_key=api_key,
-            base_url="https://ark.cn-beijing.volces.com/api/v3",
-        )
+        client = Ark(api_key=api_key)
 
         # 构建提示词（与 app.py 完全相同）
         prompt = build_prompt(mood, test_categories)
@@ -124,6 +121,7 @@ def test_single_mood():
                 {"role": "system", "content": "你是一位专业的图书推荐专家，擅长根据用户心情推荐合适的书籍。"},
                 {"role": "user", "content": prompt}
             ],
+            reasoning_effort = "minimal",
             temperature=0.7,
             max_tokens=1500,  # 增加以容纳类别信息
             timeout=60  # 增加到 60 秒以应对网络延迟
