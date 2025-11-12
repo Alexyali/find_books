@@ -101,7 +101,6 @@ find_books/
 ├── README.md              # 项目说明文档
 ├── LICENSE                # 许可证文件
 ├── test_api.py            # API 连接测试脚本
-├── test_book_recommendation.py  # 书籍推荐测试
 ├── test_single_mood.py    # 单一心情测试
 ├── static/                # 静态资源目录
 │   ├── style.css         # 样式表（包含收藏夹样式）
