@@ -132,6 +132,18 @@ find_books/
 }
 ```
 
+**命令行测试示例:**
+
+使用 curl (Git Bash / Linux / macOS):
+```bash
+curl http://localhost:5000/api/categories
+```
+
+使用 PowerShell (Windows):
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/categories" -Method Get | ConvertTo-Json -Depth 10
+```
+
 ### POST /api/recommend
 
 接收用户心情和可选的类别偏好，返回书籍推荐。
@@ -165,6 +177,46 @@ find_books/
   "error": "错误信息描述"
 }
 ```
+
+**命令行测试示例:**
+
+使用 curl (Git Bash / Linux / macOS):
+```bash
+# 基本请求（仅心情）
+curl -X POST http://localhost:5000/api/recommend \
+  -H "Content-Type: application/json" \
+  -d "{\"mood\":\"今天心情很好，想读一些轻松愉快的书\"}"
+
+# 带类别偏好的请求
+curl -X POST http://localhost:5000/api/recommend \
+  -H "Content-Type: application/json" \
+  -d "{\"mood\":\"感到有些焦虑，需要放松\",\"categories\":[\"literature\",\"lifestyle\"]}"
+```
+
+使用 PowerShell (Windows):
+```powershell
+# 基本请求（仅心情）
+$body = @{
+    mood = "今天心情很好，想读一些轻松愉快的书"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:5000/api/recommend" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body | ConvertTo-Json -Depth 10
+
+# 带类别偏好的请求
+$body = @{
+    mood = "感到有些焦虑，需要放松"
+    categories = @("literature", "lifestyle")
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:5000/api/recommend" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body | ConvertTo-Json -Depth 10
+```
+
 
 ## 书籍类别
 
