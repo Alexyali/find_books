@@ -10,8 +10,8 @@
 - 调用 OpenAI API 获取书籍推荐
 - 返回格式化的推荐结果
 
-作者：[Your Name]
-日期：2024
+ * 作者：[huangweijia]
+ * 日期：2025.11.12
 """
 
 import os
