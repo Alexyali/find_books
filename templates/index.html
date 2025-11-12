@@ -11,6 +11,17 @@
         <header>
             <h1>📚 智能书籍推荐</h1>
             <p class="subtitle">告诉我你的心情，让我为你推荐适合的书籍</p>
+
+            <!-- 导航栏 -->
+            <nav class="main-nav" role="tablist" aria-label="主导航">
+                <button class="nav-tab active" data-view="recommendations" role="tab" aria-pressed="true" aria-controls="recommendations" aria-label="查看推荐">
+                    推荐
+                </button>
+                <button class="nav-tab" data-view="favorites" role="tab" aria-pressed="false" aria-controls="favoritesView" aria-label="查看收藏夹">
+                    收藏夹
+                    <span class="badge" id="favoritesCount" aria-label="收藏数量">0</span>
+                </button>
+            </nav>
         </header>
 
         <main>
@@ -90,12 +101,32 @@
                     <!-- 推荐卡片将通过 JavaScript 动态插入 -->
                 </div>
             </section>
+
+            <!-- 收藏夹视图 -->
+            <section class="favorites-view" id="favoritesView" style="display: none;">
+                <h2>我的收藏夹</h2>
+
+                <!-- 空状态 -->
+                <div class="empty-state" id="emptyState">
+                    <span class="empty-icon">📚</span>
+                    <p>还没有收藏任何书籍</p>
+                    <p class="empty-hint">在推荐结果中点击星星图标收藏书籍</p>
+                </div>
+
+                <!-- 收藏列表 -->
+                <div class="favorites-list" id="favoritesList">
+                    <!-- 按类别分组的书籍卡片 -->
+                </div>
+            </section>
         </main>
 
         <footer>
             <p>基于豆包大模型技术的智能推荐系统</p>
         </footer>
     </div>
+
+    <!-- 屏幕阅读器实时通知区域 -->
+    <div id="srAnnouncer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
